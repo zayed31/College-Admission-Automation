@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Upload</title>
+</head>
+<body>
+    <h1>Test Document Upload</h1>
+    <button onclick="testConnection()">Test Connection</button>
+    <br><br>
+    <input type="file" id="fileInput" accept="image/*,application/pdf,.doc,.docx">
+    <button onclick="uploadFile()">Upload</button>
+    <div id="result"></div>
+
+    <script>
+        async function testConnection() {
+            const resultDiv = document.getElementById('result');
+            try {
+                resultDiv.innerHTML = 'Testing connection...';
+                const response = await fetch('http://localhost:8080/api/test-cloudinary', {
+                    method: 'GET',
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Connection failed: ${response.status} ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                resultDiv.innerHTML = `<h3>Connection Test Successful!</h3><p>${JSON.stringify(result, null, 2)}</p>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<h3>Connection Test Failed</h3><p>${error.message}</p>`;
+            }
+        }
+
+        async function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            const resultDiv = document.getElementById('result');
+            
+            if (!fileInput.files[0]) {
+                resultDiv.innerHTML = 'Please select a file';
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                resultDiv.innerHTML = 'Uploading...';
+                
+                console.log('Uploading file:', file.name, 'Size:', file.size);
+                
+                const response = await fetch('http://localhost:8080/api/upload', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+
+                if (!response.ok) {
+                    let errorMessage = `Upload failed: ${response.status} ${response.statusText}`;
+                    try {
+                        const errorData = await response.json();
+                        errorMessage += ` - ${JSON.stringify(errorData)}`;
+                    } catch (e) {
+                        errorMessage += ' - Could not parse error response';
+                    }
+                    throw new Error(errorMessage);
+                }
+
+                const result = await response.json();
+                console.log('Upload result:', result);
+                resultDiv.innerHTML = `
+                    <h3>Upload Successful!</h3>
+                    <p><strong>File:</strong> ${result.fileName}</p>
+                    <p><strong>Public ID:</strong> ${result.publicId}</p>
+                    <p><strong>Size:</strong> ${result.size} bytes</p>
+                    <p><strong>Format:</strong> ${result.format}</p>
+                    <p><strong>URL:</strong> <a href="${result.secureUrl}" target="_blank">${result.secureUrl}</a></p>
+                `;
+            } catch (error) {
+                console.error('Upload error:', error);
+                resultDiv.innerHTML = `<h3>Upload Failed</h3><p>${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

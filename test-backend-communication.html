@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Backend Communication Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+        .loading { color: #007bff; }
+    </style>
+</head>
+<body>
+    <h1>Backend Communication Test Suite</h1>
+    
+    <div class="test-section info">
+        <h3>Test Configuration</h3>
+        <p><strong>Main Backend:</strong> http://localhost:8080</p>
+        <p><strong>Python Server:</strong> <span id="pythonServerUrl">http://your-document-server-ip:port</span></p>
+        <p><strong>Endpoint:</strong> /api/process-doc</p>
+    </div>
+
+    <div class="test-section">
+        <h3>1. Test Main Backend Health</h3>
+        <button onclick="testMainBackend()">Test Main Backend</button>
+        <div id="mainBackendResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>2. Test Python Server Connection</h3>
+        <button onclick="testPythonServer()">Test Python Server</button>
+        <div id="pythonServerResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>3. Test Document Processing Flow</h3>
+        <button onclick="testDocumentProcessing()">Test Full Document Processing</button>
+        <div id="documentProcessingResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>4. Mock Python Server Response</h3>
+        <button onclick="testMockResponse()">Test with Mock Data</button>
+        <div id="mockResponseResult"></div>
+    </div>
+
+    <script>
+        const MAIN_BACKEND_URL = 'http://localhost:8080';
+        const PYTHON_SERVER_URL = 'http://your-document-server-ip:port'; // Update this
+
+        async function testMainBackend() {
+            const resultDiv = document.getElementById('mainBackendResult');
+            resultDiv.innerHTML = '<div class="loading">Testing main backend...</div>';
+            
+            try {
+                const response = await fetch(`${MAIN_BACKEND_URL}/api/actuator/health`);
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h4>✅ Main Backend is Running</h4>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Main Backend Test Failed</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function testPythonServer() {
+            const resultDiv = document.getElementById('pythonServerResult');
+            resultDiv.innerHTML = '<div class="loading">Testing Python server connection...</div>';
+            
+            try {
+                const response = await fetch(`${MAIN_BACKEND_URL}/api/test-document-processing-server`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h4>✅ Python Server Connection Successful</h4>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <h4>❌ Python Server Connection Failed</h4>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Python Server Test Failed</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function testDocumentProcessing() {
+            const resultDiv = document.getElementById('documentProcessingResult');
+            resultDiv.innerHTML = '<div class="loading">Testing document processing...</div>';
+            
+            // Mock document data
+            const mockDocuments = [
+                {
+                    cloudinaryId: 'college_admissions/sample_document_1',
+                    name: 'sample_marksheet.pdf',
+                    type: 'application/pdf',
+                    documentType: 'marksheet_10th',
+                    size: 1024000
+                },
+                {
+                    cloudinaryId: 'college_admissions/sample_document_2',
+                    name: 'sample_certificate.pdf',
+                    type: 'application/pdf',
+                    documentType: 'passing_certificate',
+                    size: 512000
+                }
+            ];
+
+            const processingData = {
+                studentId: `TEST_STU_${Date.now()}`,
+                admissionSessionId: `TEST_ADM_${Date.now()}`,
+                documents: mockDocuments
+            };
+
+            try {
+                console.log('Sending test data:', processingData);
+                
+                const response = await fetch(`${MAIN_BACKEND_URL}/api/process-student-documents`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(processingData)
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h4>✅ Document Processing Successful</h4>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <h4>❌ Document Processing Failed</h4>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Document Processing Test Failed</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function testMockResponse() {
+            const resultDiv = document.getElementById('mockResponseResult');
+            resultDiv.innerHTML = '<div class="loading">Testing with mock response...</div>';
+            
+            // This simulates what your Python server should return
+            const mockResponse = {
+                status: "SUCCESS",
+                message: "Documents processed successfully",
+                requestId: "REQ_" + Date.now(),
+                processingId: "PROC_" + Date.now(),
+                timestamp: Date.now(),
+                processedDocuments: [
+                    {
+                        cloudinaryId: "college_admissions/sample_document_1",
+                        documentType: "marksheet_10th",
+                        classifiedType: "marksheet_10th",
+                        confidence: 0.95,
+                        processingStatus: "SUCCESS",
+                        extractedData: {
+                            rollNo: "12345",
+                            board: "CBSE",
+                            year: "2020",
+                            marks: {
+                                math: 85,
+                                science: 90,
+                                english: 88
+                            }
+                        }
+                    },
+                    {
+                        cloudinaryId: "college_admissions/sample_document_2",
+                        documentType: "passing_certificate",
+                        classifiedType: "passing_certificate",
+                        confidence: 0.92,
+                        processingStatus: "SUCCESS",
+                        extractedData: {
+                            name: "John Doe",
+                            roll: "12345",
+                            yearOfPassing: "2020"
+                        }
+                    }
+                ],
+                extractedStudentData: {
+                    studentName: "John Doe",
+                    rollNumber: "12345",
+                    board: "CBSE",
+                    yearOfPassing: "2020",
+                    totalMarks: 263,
+                    percentage: 87.67
+                }
+            };
+
+            resultDiv.innerHTML = `
+                <div class="info">
+                    <h4>📋 Expected Python Server Response Format</h4>
+                    <p>Your Python server should return a JSON response in this format:</p>
+                    <pre>${JSON.stringify(mockResponse, null, 2)}</pre>
+                </div>
+            `;
+        }
+
+        // Auto-test main backend on page load
+        window.onload = function() {
+            testMainBackend();
+        };
+    </script>
+</body>
+</html>

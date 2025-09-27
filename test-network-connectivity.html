@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Network Connectivity Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        input { padding: 8px; margin: 5px; width: 200px; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+        .loading { color: #007bff; }
+    </style>
+</head>
+<body>
+    <h1>Network Connectivity Test</h1>
+    
+    <div class="test-section info">
+        <h3>Network Configuration</h3>
+        <p><strong>Main Backend:</strong> <span id="mainBackendUrl">http://localhost:8080</span></p>
+        <p><strong>Python Server:</strong> <input type="text" id="pythonServerUrl" placeholder="http://192.168.1.101:5000" value="http://localhost:5000"></p>
+        <button onclick="updatePythonServerUrl()">Update Python Server URL</button>
+    </div>
+
+    <div class="test-section">
+        <h3>1. Test Main Backend (Local)</h3>
+        <button onclick="testMainBackend()">Test Main Backend</button>
+        <div id="mainBackendResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>2. Test Python Server (Remote)</h3>
+        <button onclick="testPythonServer()">Test Python Server</button>
+        <div id="pythonServerResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>3. Test Cross-Origin Communication</h3>
+        <button onclick="testCrossOrigin()">Test Cross-Origin</button>
+        <div id="crossOriginResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>4. Test Backend-to-Backend Communication</h3>
+        <button onclick="testBackendToBackend()">Test Backend Communication</button>
+        <div id="backendToBackendResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>5. Network Information</h3>
+        <button onclick="showNetworkInfo()">Show Network Info</button>
+        <div id="networkInfoResult"></div>
+    </div>
+
+    <script>
+        let MAIN_BACKEND_URL = 'http://localhost:8080';
+        let PYTHON_SERVER_URL = 'http://localhost:5000';
+
+        function updatePythonServerUrl() {
+            PYTHON_SERVER_URL = document.getElementById('pythonServerUrl').value;
+            document.getElementById('mainBackendUrl').textContent = MAIN_BACKEND_URL;
+            console.log('Updated Python server URL to:', PYTHON_SERVER_URL);
+        }
+
+        async function testMainBackend() {
+            const resultDiv = document.getElementById('mainBackendResult');
+            resultDiv.innerHTML = '<div class="loading">Testing main backend...</div>';
+            
+            try {
+                const response = await fetch(`${MAIN_BACKEND_URL}/api/actuator/health`);
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h4>✅ Main Backend is Running</h4>
+                            <p><strong>URL:</strong> ${MAIN_BACKEND_URL}</p>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Main Backend Test Failed</h4>
+                        <p><strong>URL:</strong> ${MAIN_BACKEND_URL}</p>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function testPythonServer() {
+            const resultDiv = document.getElementById('pythonServerResult');
+            resultDiv.innerHTML = '<div class="loading">Testing Python server...</div>';
+            
+            try {
+                const response = await fetch(`${PYTHON_SERVER_URL}/health`);
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h4>✅ Python Server is Running</h4>
+                            <p><strong>URL:</strong> ${PYTHON_SERVER_URL}</p>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Python Server Test Failed</h4>
+                        <p><strong>URL:</strong> ${PYTHON_SERVER_URL}</p>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <p><strong>Possible Issues:</strong></p>
+                        <ul>
+                            <li>Python server is not running</li>
+                            <li>Wrong IP address or port</li>
+                            <li>Firewall blocking the connection</li>
+                            <li>CORS issues</li>
+                        </ul>
+                    </div>
+                `;
+            }
+        }
+
+        async function testCrossOrigin() {
+            const resultDiv = document.getElementById('crossOriginResult');
+            resultDiv.innerHTML = '<div class="loading">Testing cross-origin communication...</div>';
+            
+            try {
+                // Test if we can make requests from frontend to both backends
+                const [mainBackendResponse, pythonServerResponse] = await Promise.allSettled([
+                    fetch(`${MAIN_BACKEND_URL}/api/actuator/health`),
+                    fetch(`${PYTHON_SERVER_URL}/health`)
+                ]);
+
+                let result = '<div class="info"><h4>Cross-Origin Test Results</h4>';
+                
+                if (mainBackendResponse.status === 'fulfilled') {
+                    result += '<p>✅ Main Backend: Accessible</p>';
+                } else {
+                    result += `<p>❌ Main Backend: ${mainBackendResponse.reason.message}</p>`;
+                }
+                
+                if (pythonServerResponse.status === 'fulfilled') {
+                    result += '<p>✅ Python Server: Accessible</p>';
+                } else {
+                    result += `<p>❌ Python Server: ${pythonServerResponse.reason.message}</p>`;
+                }
+                
+                result += '</div>';
+                resultDiv.innerHTML = result;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Cross-Origin Test Failed</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function testBackendToBackend() {
+            const resultDiv = document.getElementById('backendToBackendResult');
+            resultDiv.innerHTML = '<div class="loading">Testing backend-to-backend communication...</div>';
+            
+            try {
+                const response = await fetch(`${MAIN_BACKEND_URL}/api/test-document-processing-server`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h4>✅ Backend-to-Backend Communication Successful</h4>
+                            <p><strong>Main Backend → Python Server</strong></p>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <h4>❌ Backend-to-Backend Communication Failed</h4>
+                            <p><strong>Main Backend → Python Server</strong></p>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Backend-to-Backend Test Failed</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function showNetworkInfo() {
+            const resultDiv = document.getElementById('networkInfoResult');
+            
+            const networkInfo = {
+                userAgent: navigator.userAgent,
+                platform: navigator.platform,
+                language: navigator.language,
+                cookieEnabled: navigator.cookieEnabled,
+                onLine: navigator.onLine,
+                connection: navigator.connection ? {
+                    effectiveType: navigator.connection.effectiveType,
+                    downlink: navigator.connection.downlink,
+                    rtt: navigator.connection.rtt
+                } : 'Not available',
+                currentURL: window.location.href,
+                mainBackendURL: MAIN_BACKEND_URL,
+                pythonServerURL: PYTHON_SERVER_URL
+            };
+            
+            resultDiv.innerHTML = `
+                <div class="info">
+                    <h4>Network Information</h4>
+                    <pre>${JSON.stringify(networkInfo, null, 2)}</pre>
+                </div>
+            `;
+        }
+
+        // Auto-test main backend on page load
+        window.onload = function() {
+            testMainBackend();
+        };
+    </script>
+</body>
+</html>
