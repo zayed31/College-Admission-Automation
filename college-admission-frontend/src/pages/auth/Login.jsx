@@ -76,18 +76,18 @@ const Login = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: { xs: 2, sm: 3, md: 12.25 },
+        padding: { xs: 2, sm: 3, md: 5.75 },
         overflow: 'hidden'
       }}
     >
       <Container component="main" maxWidth="xl" sx={{ width: '100%' }}>
-        <Grid container spacing={{ xs: 2, md: 4 }} alignItems="center" sx={{ height: '100%', maxHeight: '100vh' }}>
+        <Grid container spacing={0} alignItems="center" sx={{ height: '100%', maxHeight: '100vh' }}>
           {/* Left Side - Login Form */}
           <Grid item xs={12} lg={6} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
             <Box sx={{ 
               width: '100%',
               maxWidth: { xs: '100%', sm: '450px', lg: '500px' },
-              px: { xs: 2, sm: 0 }
+              px: { xs: 3, sm: 4, lg: 6 }
             }}>
               <Paper 
                 elevation={20}
@@ -407,8 +407,8 @@ const Login = () => {
                 justifyContent: 'center',
                 width: '100%',
                 height: '100%',
-                maxHeight: '70vh',
-                px: { xs: 2, lg: 4 }
+                maxHeight: '100vh',
+                padding: 0
               }}
             >
               <DotLottieReact
@@ -418,8 +418,9 @@ const Login = () => {
                 style={{ 
                   width: '100%', 
                   height: '100%',
-                  maxWidth: '600px',
-                  maxHeight: '600px'
+                  maxWidth: '800px',
+                  maxHeight: '800px',
+                  objectFit: 'contain'
                 }}
               />
             </Box>
